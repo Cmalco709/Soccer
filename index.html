@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Soccer Game</title>
+    <style>canvas#myCanvas {
+  background-color: white;
+  border: 5px solid black;
+}
+
+html {
+  background-color: #a6a0f5;
+}
+</style>
+</head>
+<body>
+    <canvas id="myCanvas" width="400" height="400">Your browser does not support JS Canvas</canvas>
+<button onclick="playGame()">Play Game</button>
+    <script>// cache the canvas
+const canvas = document.getElementById("myCanvas");
+// initalize the context
+let ctx = canvas.getContext("2d");
+const CW = canvas.width;
+const CH = canvas.height;
+const halfCW = CW / 2;
+const halfCH = CH / 2;
+
+let ballIconSrc =
+  "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/b897766f-cc7f-4fb1-b43d-e860484395e3/db4reoe-1790b1fb-98b7-446f-9318-4fc9aacf89e0.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcL2I4OTc3NjZmLWNjN2YtNGZiMS1iNDNkLWU4NjA0ODQzOTVlM1wvZGI0cmVvZS0xNzkwYjFmYi05OGI3LTQ0NmYtOTMxOC00ZmM5YWFjZjg5ZTAucG5nIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.thWycXwNqFLn_j-YbVxoBbrnz4CHZgmNQMu1pOfF-iA";
+let netIconSrc =
+  "https://png.pngtree.com/png-vector/20220719/ourmid/pngtree-color-icon---football-goal-post-game-icon-penalty-vector-png-image_37947066.png";
+let ballImage = new Image();
+ballImage.crossOrigin = "anonymous";
+ballImage.src = ballIconSrc;
+
+let ballW = 40;
+let ballH = 40;
+let ballY = Math.floor(Math.random() * 250) + 20;
+let ballX = Math.floor(Math.random() * 380) + 20;
+
+let ballSpeedX = 7;
+let ballSpeedY = 4;
+
+let bounces = 0;
+let score = 0;
+let falls = 0;
+
+function background(x = 0, y = 0, h = 50, w = 50, c = "#DAD4F6") {
+  drawRect(x, y, h, w, c);
+}
+
+function apply() {
+  background(0, 0);
+  background(0, 100);
+  background(0, 200);
+  background(0, 300);
+  background(100, 0);
+  background(100, 100);
+  background(100, 200);
+  background(100, 300);
+  background(200, 0);
+  background(200, 100);
+  background(200, 200);
+  background(200, 300);
+  background(300, 0);
+  background(300, 100);
+  background(300, 200);
+  background(300, 300);
+  background(50, 50);
+  background(50, 150);
+  background(50, 250);
+  background(50, 350);
+  background(150, 50);
+  background(150, 150);
+  background(150, 250);
+  background(150, 350);
+  background(250, 50);
+  background(250, 150);
+  background(250, 250);
+  background(250, 350);
+  background(350, 50);
+  background(350, 150);
+  background(350, 250);
+  background(350, 350);
+}
+
+apply();
+
+function drawRect(x, y, w, h, c = "black") {
+  ctx.fillStyle = c;
+  ctx.fillRect(x, y, w, h);
+}
+// invoke the function
+function drawBall() {
+  ctx.drawImage(ballImage, ballX, ballY, ballW, ballH);
+}
+
+drawBall();
+
+let paddleW = 100;
+let paddleH = 20;
+let paddleX = CW / 2 - paddleW / 2;
+let paddleY = CH - paddleH - 20;
+
+let netW = 150;
+let netH = 5;
+let netX = CW / 2 - netW / 2;
+let netY = 0;
+
+function drawPaddle() {
+  drawRect(paddleX, paddleY, paddleW, paddleH);
+}
+drawPaddle();
+
+function drawHUD() {
+  ctx.font = "12px Arial";
+  ctx.fillStyle = "black";
+  ctx.fillText("Bounces: " + bounces, 50, 50);
+  ctx.font = "12px Arial";
+  ctx.fillText("Score: " + score, 50, 100);
+  ctx.font = "12px Arial";
+  ctx.fillText("Falls: " + falls, 50, 150);
+}
+
+function drawNet() {
+  drawRect(netX, netY, netW, netH, "red");
+}
+
+drawNet();
+
+function paddleCollision() {
+  if (
+    // first
+    ballX < paddleX + paddleW &&
+    // second
+    ballX + ballW > paddleX &&
+    // third
+    ballY < paddleY + paddleH &&
+    // fourth
+    ballY + ballH > paddleY
+  ) {
+    return true;
+  }
+}
+
+function netCollision() {
+  if (
+    // first
+    ballX < netX + netW &&
+    // second
+    ballX + ballW > netX &&
+    // third
+    ballY < netY + netH &&
+    // fourth
+    ballY + ballH > netY
+  ) {
+    return true;
+  }
+}
+
+let moveRight = false;
+let moveLeft = false;
+document.addEventListener("keydown", function (event) {
+  if (event.key === "ArrowRight") {
+    moveRight = true;
+    // paddleX += 10;
+  }
+  if (event.key === "ArrowLeft") {
+    moveLeft = true;
+    // paddleX -= 10;
+  }
+});
+document.addEventListener("keyup", function (event) {
+  if (event.key === "ArrowRight") {
+    moveRight = false;
+    // paddleX += 10;
+  }
+  if (event.key === "ArrowLeft") {
+    moveLeft = false;
+    // paddleX -= 10;
+  }
+});
+
+function playGame() {
+  ctx.clearRect(0, 0, CW, CH);
+  ballX += ballSpeedX;
+  ballY += ballSpeedY;
+  apply();
+  drawHUD();
+  drawNet();
+
+  if (ballX + ballW > CW || ballX < 0) {
+    ballSpeedX *= -1;
+  }
+  if (ballY < 0) {
+    ballSpeedY *= -1;
+  }
+
+  if (ballY + ballH > CH) {
+    falls++;
+    console.log("fail. Number of falls: " + falls);
+    ballSpeedY = 5;
+    ballY = Math.floor(Math.random() * 250) + 20;
+    ballX = Math.floor(Math.random() * 380) + 20;
+  }
+
+  if (paddleCollision()) {
+    console.log("collision!");
+    bounces = bounces + 1;
+    console.log(bounces);
+    // ballSpeedX *= -1;
+    ballSpeedY *= -1.3;
+  }
+
+  // paddle not move past
+  if (paddleX < 0) {
+    paddleX += 10;
+  }
+  if (paddleX + paddleW > CW) {
+    paddleX -= 10;
+  }
+
+  if (netCollision()) {
+    console.log("score!");
+    score = score + 1;
+    console.log(score);
+    // ballSpeedX *= -1;
+    ballSpeedY *= -1;
+  }
+
+  if (moveRight) {
+    paddleX += 10;
+  }
+  if (moveLeft) {
+    paddleX -= 10;
+  }
+  drawBall();
+  drawPaddle();
+
+  // count++; // increment by 1
+  // console.log(count);
+
+  // call the recursive loop
+  // recursive means continue forever
+  requestAnimationFrame(playGame);
+}
+
+// playGame();
+</script>
+</body>
+</html>
